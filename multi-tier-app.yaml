@@ -371,7 +371,7 @@ metadata:
   name: frontend-service
   namespace: demo-app
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: frontend-web
   ports:
