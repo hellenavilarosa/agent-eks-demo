@@ -46,7 +46,7 @@ spec:
   - port: 6379
     targetPort: 6379
 ---
-# Backend API with issues
+# Backend API
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,12 +87,12 @@ spec:
           const app = express();
           
           console.log('Starting API server...');
-          console.log('Attempting to connect to Redis at: redis-wrong-service:6379');
+          console.log('Attempting to connect to Redis at: redis-service:6379');
           
-          // Issue 1: Wrong Redis service name - FAIL ON STARTUP
+          // Redis service name (fixed): redis-service
           const client = redis.createClient({
             socket: {
-              host: 'redis-wrong-service',
+              host: 'redis-service',
               port: 6379,
               connectTimeout: 5000
             }
@@ -100,7 +100,7 @@ spec:
           
           client.on('error', (err) => {
             console.error('REDIS CONNECTION ERROR:', err.message);
-            console.error('Failed to connect to redis-wrong-service:6379');
+            console.error('Failed to connect to redis-service:6379');
             console.error('Check if Redis service name is correct');
             console.error('APPLICATION WILL EXIT DUE TO REDIS CONNECTION FAILURE');
             process.exit(1);
@@ -120,7 +120,7 @@ spec:
             } catch (err) {
               console.error('STARTUP FAILED: Cannot connect to Redis');
               console.error('Error:', err.message);
-              console.error('Service name: redis-wrong-service (should be redis-service)');
+              console.error('Service name: redis-service');
               console.error('Exiting application...');
               process.exit(1);
             }
@@ -176,11 +176,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            memory: "32Mi"  # Issue 2: Too low memory
+            memory: "128Mi"
             cpu: "10m"
           limits:
-            memory: "64Mi"
-            cpu: "50m"
+            memory: "256Mi"
+            cpu: "200m"
 ---
 apiVersion: v1
 kind: Service
