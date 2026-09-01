@@ -92,7 +92,7 @@ spec:
           // Issue 1: Wrong Redis service name - FAIL ON STARTUP
           const client = redis.createClient({
             socket: {
-              host: 'redis-service',
+              host: 'redis-wrong-service',
               port: 6379,
               connectTimeout: 5000
             }
@@ -176,11 +176,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "50m"
+            memory: "32Mi"  # Issue 2: Too low memory
+            cpu: "10m"
           limits:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "64Mi"
+            cpu: "50m"
 ---
 apiVersion: v1
 kind: Service
