@@ -378,7 +378,7 @@ spec:
   - port: 80
     targetPort: 80
 ---
-# Issue 4: ImagePullBackOff
+# Monitoring Agent (fixed image)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -396,4 +396,6 @@ spec:
     spec:
       containers:
       - name: agent
-        image: nonexistent/monitoring:latest
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100
