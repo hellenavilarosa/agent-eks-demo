@@ -46,7 +46,7 @@ spec:
   - port: 6379
     targetPort: 6379
 ---
-# Backend API with issues
+# Backend API (fixed)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,12 +87,12 @@ spec:
           const app = express();
           
           console.log('Starting API server...');
-          console.log('Attempting to connect to Redis at: redis-wrong-service:6379');
+          console.log('Attempting to connect to Redis at: redis-service:6379');
           
-          // Issue 1: Wrong Redis service name - FAIL ON STARTUP
+          // Fix: Correct Redis service name
           const client = redis.createClient({
             socket: {
-              host: 'redis-wrong-service',
+              host: 'redis-service',
               port: 6379,
               connectTimeout: 5000
             }
@@ -100,7 +100,7 @@ spec:
           
           client.on('error', (err) => {
             console.error('REDIS CONNECTION ERROR:', err.message);
-            console.error('Failed to connect to redis-wrong-service:6379');
+            console.error('Failed to connect to redis-service:6379');
             console.error('Check if Redis service name is correct');
             console.error('APPLICATION WILL EXIT DUE TO REDIS CONNECTION FAILURE');
             process.exit(1);
@@ -120,7 +120,7 @@ spec:
             } catch (err) {
               console.error('STARTUP FAILED: Cannot connect to Redis');
               console.error('Error:', err.message);
-              console.error('Service name: redis-wrong-service (should be redis-service)');
+              console.error('Service name: redis-service');
               console.error('Exiting application...');
               process.exit(1);
             }
@@ -176,11 +176,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            memory: "32Mi"  # Issue 2: Too low memory
-            cpu: "10m"
-          limits:
-            memory: "64Mi"
+            memory: "128Mi"  # Fix: sufficient memory to avoid OOMKilled
             cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
 ---
 apiVersion: v1
 kind: Service
@@ -194,7 +194,7 @@ spec:
   - port: 3000
     targetPort: 3000
 ---
-# Frontend with wrong backend port
+# Frontend (fixed backend port)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -242,8 +242,8 @@ data:
             index index.html;
         }
         location /api/ {
-            # Issue 3: Wrong port (should be 3000)
-            proxy_pass http://backend-service:8080/;
+            # Fix: Correct port (backend listens on 3000)
+            proxy_pass http://backend-service:3000/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
         }
@@ -288,11 +288,11 @@ data:
             <div id="result" class="info">Click a button to test the application...</div>
             
             <div class="status">
-                <h3>Expected Issues (for troubleshooting demo):</h3>
-                <div class="status-item error">X Backend API: Wrong Redis service name</div>
-                <div class="status-item error">X Backend API: Insufficient memory limits</div>
-                <div class="status-item error">X Frontend: Wrong backend port in nginx config</div>
-                <div class="status-item error">X Monitoring: ImagePullBackOff error</div>
+                <h3>Status (all issues fixed):</h3>
+                <div class="status-item success">OK Backend API: Correct Redis service name</div>
+                <div class="status-item success">OK Backend API: Sufficient memory limits</div>
+                <div class="status-item success">OK Frontend: Correct backend port in nginx config</div>
+                <div class="status-item success">OK Monitoring: Valid image</div>
             </div>
         </div>
         
@@ -314,7 +314,7 @@ data:
                     updateResult('FAILED: Health check failed: HTTP ' + response.status, 'error');
                 }
             } catch (err) {
-                updateResult('ERROR: Health check error: ' + err.message + '<br><br>This likely means nginx cannot reach the backend on port 8080 (should be 3000)', 'error');
+                updateResult('ERROR: Health check error: ' + err.message, 'error');
             }
         }
         
@@ -330,7 +330,7 @@ data:
                     updateResult('FAILED: API test failed: HTTP ' + response.status + '<br>' + errorText, 'error');
                 }
             } catch (err) {
-                updateResult('ERROR: API test error: ' + err.message + '<br><br>This likely means nginx cannot reach the backend on port 8080 (should be 3000)', 'error');
+                updateResult('ERROR: API test error: ' + err.message, 'error');
             }
         }
         
@@ -354,7 +354,7 @@ data:
                 results.push('ERROR: API Data: Connection Error');
             }
             
-            updateResult(results.join('<br>') + '<br><br>Use the troubleshooting agent to fix these issues!', 'info');
+            updateResult(results.join('<br>'), 'info');
         }
         
         // Auto-check status on load
@@ -378,7 +378,7 @@ spec:
   - port: 80
     targetPort: 80
 ---
-# Issue 4: ImagePullBackOff
+# Monitoring agent (fixed image)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -396,4 +396,13 @@ spec:
     spec:
       containers:
       - name: agent
-        image: nonexistent/monitoring:latest
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
